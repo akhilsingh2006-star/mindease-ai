@@ -1,13 +1,14 @@
-from fastapi import APIRouter, Depends
+from typing import List
+import fastapi
 from sqlalchemy.orm import Session
 from app.dependencies import get_db
 from app.schemas.stress import StressCreate
 from app.services.stress_service import create_stress_entry
 
-router = APIRouter()
+router = fastapi.APIRouter()
 
 @router.post("/stress")
-def create_stress(stress_data: StressCreate, db: Session = Depends(get_db)):
+def create_stress(stress_data: StressCreate, db: Session = fastapi.Depends(get_db)):
     # Pass the heavy lifting to the service layer!
     new_entry = create_stress_entry(db=db, stress=stress_data)
     

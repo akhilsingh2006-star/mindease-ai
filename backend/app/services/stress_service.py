@@ -21,3 +21,9 @@ def create_stress_entry(db: Session, stress: StressCreate) -> StressLog:
     db.refresh(new_entry)
 
     return new_entry
+
+def get_user_stress_history(db: Session, user_id: int):
+    """
+    Fetches all stress logs for a specific user, ordered by newest first.
+    """
+    return db.query(StressLog).filter(StressLog.user_id == user_id).order_by(StressLog.id.desc()).all()
