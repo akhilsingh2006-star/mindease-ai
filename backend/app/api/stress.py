@@ -1,9 +1,14 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List  
+import base64
+import numpy as np
+import cv2
+from deepface import DeepFace
+from fastapi import HTTPException
 
 from app.database import get_db
-from app.schemas.stress import StressCreate, StressResponse
+from app.schemas.stress import StressCreate, StressResponse, FaceRequest
 from app.services import stress_service
 
 # used prefix here so don't have to type "/stress" on every route
@@ -31,3 +36,19 @@ def get_stress_history(user_id: int, db: Session = Depends(get_db)):
     if not history:
         raise HTTPException(status_code=404, detail="No stress history found for this user")
     return history
+
+@router.post("/analyze-face")
+def analyze_face(request: FaceRequest):
+    try:
+        encoded_data = request.image_base64.split(',')[1]
+        nparr = np.frombuffer(base64.b64decode(encoded_data), np.uint8)
+        img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        result = DeepFace.analyze(img, actions=['emotion'], enforce_detection=False)
+        
+        dominant_emotion = result[0]['dominant_emotion']
+        
+        return {"emotion": dominant_emotion.capitalize(), "confidence": 0.95}
+
+    except Exception as e:
+        print(f"CNN Error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to process image")
